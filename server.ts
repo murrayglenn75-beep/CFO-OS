@@ -4,12 +4,19 @@ import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import Anthropic from '@anthropic-ai/sdk';
 
-import { appendAuditEvent, getAuditEvents } from './server/audit';
+import {
+  appendAuditEvent,
+  getAuditEvents,
+} from './server/audit';
+
 import {
   apiRateLimit,
+  requestId,
+  requireJson,
   securityHeaders,
   validateMessages,
 } from './server/security';
+
 import {
   buildTrustEnvelope,
   detectPromptInjection,
@@ -22,10 +29,39 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
 
+/*
+ * -------------------------------------------------------
+ * HTTP / APPLICATION SECURITY BOUNDARY
+ * -------------------------------------------------------
+ */
+
 app.disable('x-powered-by');
+
+app.use(requestId);
 app.use(securityHeaders);
-app.use('/api', apiRateLimit);
-app.use(express.json({ limit: '32kb' }));
+
+app.use(
+  express.json({
+    limit: '32kb',
+    strict: true,
+  }),
+);
+
+app.use(
+  '/api',
+  apiRateLimit,
+);
+
+app.use(
+  '/api',
+  requireJson,
+);
+
+/*
+ * -------------------------------------------------------
+ * GOVERNED MODEL SYSTEM INSTRUCTION
+ * -------------------------------------------------------
+ */
 
 const SYSTEM_INSTRUCTION = `
 You are the read-only CFO Copilot inside CFO OS, a PUBLIC SYNTHETIC DEMO.
@@ -33,6 +69,7 @@ You are the read-only CFO Copilot inside CFO OS, a PUBLIC SYNTHETIC DEMO.
 You may explain, summarize and estimate from the supplied synthetic finance context.
 
 SECURITY AND AUTHORITY RULES:
+
 - You have NO tools.
 - You have NO execution authority.
 - You cannot change financial records.
@@ -72,6 +109,7 @@ Cash:
 $3,544,000 vs $3,902,000.
 
 SOURCE SYSTEMS:
+
 NetSuite: 18,420 rows.
 Salesforce: 1,284 rows.
 Gusto: 312 rows.
@@ -79,40 +117,62 @@ Mercury: 946 rows.
 Brex: 2,108 rows.
 
 OPEN EXCEPTIONS:
+
 1. One entity conflict with differing tax IDs.
 2. One unmatched Brex charge held for coding.
 
 REVENUE TIMING:
+
 Two synthetic enterprise renewals worth approximately $312k moved
 from May into June in CRM.
 
 MARKETING:
+
 A synthetic Q3 acquisition program began three weeks early and
 the spend reconciles to approved card and bank records.
 `;
 
+/*
+ * -------------------------------------------------------
+ * ANTHROPIC CLIENT
+ * -------------------------------------------------------
+ */
+
 let anthropicClient: Anthropic | null = null;
 
 function getAnthropic() {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey =
+    process.env.ANTHROPIC_API_KEY;
 
   if (!apiKey) {
-    throw new Error('ANTHROPIC_API_KEY is not configured');
+    throw new Error(
+      'ANTHROPIC_API_KEY is not configured',
+    );
   }
 
   if (!anthropicClient) {
-    anthropicClient = new Anthropic({
-      apiKey,
-      timeout: 20_000,
-      maxRetries: 1,
-    });
+    anthropicClient =
+      new Anthropic({
+        apiKey,
+        timeout: 20_000,
+        maxRetries: 1,
+      });
   }
 
   return anthropicClient;
 }
 
-function fallbackAnswer(question: string) {
-  const q = question.toLowerCase();
+/*
+ * -------------------------------------------------------
+ * DETERMINISTIC FALLBACK
+ * -------------------------------------------------------
+ */
+
+function fallbackAnswer(
+  question: string,
+) {
+  const q =
+    question.toLowerCase();
 
   if (/ebitda/.test(q)) {
     return (
@@ -124,7 +184,11 @@ function fallbackAnswer(question: string) {
     );
   }
 
-  if (/board|summary|executive/.test(q)) {
+  if (
+    /board|summary|executive/.test(
+      q,
+    )
+  ) {
     return (
       '**Revenue:** $1.862M (-18.0% MoM).\n\n' +
       '**Gross margin:** 61.6% (-0.6 pp).\n\n' +
@@ -135,7 +199,11 @@ function fallbackAnswer(question: string) {
     );
   }
 
-  if (/forecast|predict|q3|scenario/.test(q)) {
+  if (
+    /forecast|predict|q3|scenario/.test(
+      q,
+    )
+  ) {
     return (
       'Model estimate: if the two delayed renewals convert in June and recent ' +
       'underlying revenue growth resumes, Q3 revenue would likely recover above ' +
@@ -144,7 +212,11 @@ function fallbackAnswer(question: string) {
     );
   }
 
-  if (/exception|reconcil/.test(q)) {
+  if (
+    /exception|reconcil/.test(
+      q,
+    )
+  ) {
     return (
       'Two exceptions need review: **one cross-system entity conflict with ' +
       'differing tax IDs**, and **one unmatched Brex charge held for coding**. ' +
@@ -160,283 +232,528 @@ function fallbackAnswer(question: string) {
   );
 }
 
-app.get('/api/health', (_req, res) => {
-  res.json({
-    ok: true,
-    mode: 'public-demo',
-    modelAuthority: 'read-only',
-    aiProvider: process.env.ANTHROPIC_API_KEY
-      ? 'anthropic'
-      : 'deterministic-fallback',
-  });
-});
+/*
+ * -------------------------------------------------------
+ * HEALTH
+ * -------------------------------------------------------
+ */
 
-app.get('/api/audit', (_req, res) => {
-  res.json({
-    events: getAuditEvents(),
-  });
-});
-
-app.post('/api/actions/qualify', (req, res) => {
-  const body = req.body || {};
-
-  if (
-    !['CFO', 'CONTROLLER', 'ACCOUNTANT', 'VIEWER'].includes(body.role) ||
-    ![
-      'EXPORT_JOURNAL',
-      'APPROVE_RECONCILIATION',
-      'SEND_PAYMENT',
-      'PUBLISH_BOARD_PACK',
-    ].includes(body.action)
-  ) {
-    return res.status(400).json({
-      error: 'Invalid action qualification request',
+app.get(
+  '/api/health',
+  (_req, res) => {
+    res.json({
+      ok: true,
+      mode: 'public-demo',
+      modelAuthority:
+        'read-only',
+      aiProvider:
+        process.env
+          .ANTHROPIC_API_KEY
+          ? 'anthropic'
+          : 'deterministic-fallback',
+      requestId:
+        res.locals.requestId,
     });
-  }
+  },
+);
 
-  const evidenceQuality = Number(body.evidenceQuality);
-  const sourceAgreement = Number(body.sourceAgreement);
-  const unresolvedExceptions = Number(body.unresolvedExceptions);
+/*
+ * -------------------------------------------------------
+ * AUDIT
+ * -------------------------------------------------------
+ */
 
-  if (
-    ![
-      evidenceQuality,
-      sourceAgreement,
-      unresolvedExceptions,
-    ].every(Number.isFinite)
-  ) {
-    return res.status(400).json({
-      error: 'Policy evidence inputs must be finite numbers',
+app.get(
+  '/api/audit',
+  (_req, res) => {
+    res.json({
+      events:
+        getAuditEvents(),
+      requestId:
+        res.locals.requestId,
     });
-  }
+  },
+);
 
-  const result = qualifyAction({
-    role: body.role,
-    action: body.action,
-    evidenceQuality,
-    sourceAgreement,
-    unresolvedExceptions,
-  });
+/*
+ * -------------------------------------------------------
+ * DETERMINISTIC ACTION QUALIFICATION
+ * -------------------------------------------------------
+ */
 
-  appendAuditEvent(
-    'ACTION_QUALIFICATION',
-    body.role,
-    `${body.action}:${result.status}`,
-  );
+app.post(
+  '/api/actions/qualify',
+  (req, res) => {
+    const body =
+      req.body || {};
 
-  return res.json(result);
-});
+    if (
+      ![
+        'CFO',
+        'CONTROLLER',
+        'ACCOUNTANT',
+        'VIEWER',
+      ].includes(
+        body.role,
+      ) ||
+      ![
+        'EXPORT_JOURNAL',
+        'APPROVE_RECONCILIATION',
+        'SEND_PAYMENT',
+        'PUBLISH_BOARD_PACK',
+      ].includes(
+        body.action,
+      )
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            'Invalid action qualification request',
 
-app.post('/api/copilot/chat', async (req, res) => {
-  try {
-    const messages = validateMessages(req.body?.messages);
-
-    if (!messages) {
-      return res.status(400).json({
-        error: 'Invalid messages payload',
-      });
+          requestId:
+            res.locals
+              .requestId,
+        });
     }
 
-    const last = messages.at(-1)!;
-
-    if (last.role !== 'user') {
-      return res.status(400).json({
-        error: 'Last message must be from the user',
-      });
-    }
-
-    /*
-     * Security processing happens BEFORE the model receives content.
-     */
-
-    const injectionRisk = detectPromptInjection(last.content);
-
-    let redactionsApplied = 0;
-
-    const cleaned = messages.map((message) => {
-      const result = redactSensitiveInput(message.content);
-
-      redactionsApplied += result.count;
-
-      return {
-        ...message,
-        content: result.text,
-      };
-    });
-
-    const trust = buildTrustEnvelope(
-      last.content,
-      injectionRisk,
-      redactionsApplied,
-    );
-
-    appendAuditEvent(
-      'COPILOT_QUERY',
-      'demo-user',
-      `${trust.status}:${trust.auditId}`,
-    );
-
-    /*
-     * Elevated prompt-injection attempts never reach Claude.
-     */
-
-    if (injectionRisk === 'ELEVATED') {
-      appendAuditEvent(
-        'COPILOT_SECURITY_BLOCK',
-        'demo-user',
-        'PROMPT_INJECTION_ELEVATED',
+    const evidenceQuality =
+      Number(
+        body.evidenceQuality,
       );
 
-      return res.json({
-        text:
-          'I can still help with the finance question, but I will not follow ' +
-          'instructions that attempt to override system controls, reveal hidden ' +
-          'prompts, or acquire execution authority. Rephrase the request as a ' +
-          'read-only finance analysis.',
-        trust,
-        provider: 'security-control',
-      });
+    const sourceAgreement =
+      Number(
+        body.sourceAgreement,
+      );
+
+    const unresolvedExceptions =
+      Number(
+        body.unresolvedExceptions,
+      );
+
+    if (
+      ![
+        evidenceQuality,
+        sourceAgreement,
+        unresolvedExceptions,
+      ].every(
+        Number.isFinite,
+      )
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            'Policy evidence inputs must be finite numbers',
+
+          requestId:
+            res.locals
+              .requestId,
+        });
     }
 
-    /*
-     * Deterministic answer exists BEFORE model execution.
-     *
-     * If Anthropic is unavailable, rate-limited, misconfigured, or rejects
-     * the request, CFO OS keeps operating.
-     */
+    const result =
+      qualifyAction({
+        role:
+          body.role,
 
-    let text = fallbackAnswer(last.content);
+        action:
+          body.action,
 
-    let provider:
-      | 'anthropic'
-      | 'deterministic-fallback' = 'deterministic-fallback';
+        evidenceQuality,
 
-    if (process.env.ANTHROPIC_API_KEY) {
-      try {
-        const providerMessages = cleaned.map((message) => ({
-          role:
-            message.role === 'assistant'
-              ? ('assistant' as const)
-              : ('user' as const),
-          content: message.content,
-        }));
+        sourceAgreement,
 
-        /*
-         * Anthropic conversation history should begin with a user message.
-         * The browser contains an assistant welcome message, so strip anything
-         * before the first real user message.
-         */
+        unresolvedExceptions,
+      });
 
-        const firstUserIndex = providerMessages.findIndex(
-          (message) => message.role === 'user',
+    appendAuditEvent(
+      'ACTION_QUALIFICATION',
+      body.role,
+      `${body.action}:${result.status}`,
+    );
+
+    return res.json({
+      ...result,
+
+      requestId:
+        res.locals.requestId,
+    });
+  },
+);
+
+/*
+ * -------------------------------------------------------
+ * GOVERNED AI COPILOT
+ * -------------------------------------------------------
+ */
+
+app.post(
+  '/api/copilot/chat',
+  async (
+    req,
+    res,
+  ) => {
+    try {
+      const messages =
+        validateMessages(
+          req.body
+            ?.messages,
         );
 
-        const usableMessages =
-          firstUserIndex >= 0
-            ? providerMessages.slice(firstUserIndex)
-            : providerMessages;
+      if (!messages) {
+        return res
+          .status(400)
+          .json({
+            error:
+              'Invalid messages payload',
 
-        const response = await getAnthropic().messages.create({
-          model:
-            process.env.ANTHROPIC_MODEL ||
-            'claude-sonnet-5',
+            requestId:
+              res.locals
+                .requestId,
+          });
+      }
 
-          max_tokens: 1000,
+      const last =
+        messages.at(-1)!;
 
-          system: SYSTEM_INSTRUCTION,
+      if (
+        last.role !==
+        'user'
+      ) {
+        return res
+          .status(400)
+          .json({
+            error:
+              'Last message must be from the user',
 
-          messages: usableMessages,
+            requestId:
+              res.locals
+                .requestId,
+          });
+      }
+
+      /*
+       * SECURITY CHECKS HAPPEN BEFORE
+       * ANY MODEL PROVIDER CALL.
+       */
+
+      const injectionRisk =
+        detectPromptInjection(
+          last.content,
+        );
+
+      let redactionsApplied =
+        0;
+
+      const cleaned =
+        messages.map(
+          (message) => {
+            const result =
+              redactSensitiveInput(
+                message.content,
+              );
+
+            redactionsApplied +=
+              result.count;
+
+            return {
+              ...message,
+
+              content:
+                result.text,
+            };
+          },
+        );
+
+      const trust =
+        buildTrustEnvelope(
+          last.content,
+
+          injectionRisk,
+
+          redactionsApplied,
+        );
+
+      appendAuditEvent(
+        'COPILOT_QUERY',
+        'demo-user',
+        `${trust.status}:${trust.auditId}`,
+      );
+
+      /*
+       * PROMPT INJECTION CONTAINMENT
+       */
+
+      if (
+        injectionRisk ===
+        'ELEVATED'
+      ) {
+        appendAuditEvent(
+          'COPILOT_SECURITY_BLOCK',
+          'demo-user',
+          'PROMPT_INJECTION_ELEVATED',
+        );
+
+        return res.json({
+          text:
+            'I can still help with the finance question, but I will not follow ' +
+            'instructions that attempt to override system controls, reveal hidden ' +
+            'prompts, or acquire execution authority. Rephrase the request as a ' +
+            'read-only finance analysis.',
+
+          trust,
+
+          provider:
+            'security-control',
+
+          requestId:
+            res.locals
+              .requestId,
         });
+      }
 
-        const modelText = response.content
-          .filter((block) => block.type === 'text')
-          .map((block) => block.text)
-          .join('\n')
-          .trim();
+      /*
+       * ALWAYS HAVE A DETERMINISTIC
+       * FALLBACK BEFORE CALLING CLAUDE.
+       */
 
-        if (modelText) {
-          text = modelText;
-          provider = 'anthropic';
+      let text =
+        fallbackAnswer(
+          last.content,
+        );
 
-          appendAuditEvent(
-            'COPILOT_PROVIDER_SUCCESS',
-            'server',
-            'ANTHROPIC',
+      let provider:
+        | 'anthropic'
+        | 'deterministic-fallback' =
+        'deterministic-fallback';
+
+      /*
+       * ANTHROPIC IS OPTIONAL.
+       */
+
+      if (
+        process.env
+          .ANTHROPIC_API_KEY
+      ) {
+        try {
+          const providerMessages =
+            cleaned.map(
+              (
+                message,
+              ) => ({
+                role:
+                  message.role ===
+                  'assistant'
+                    ? ('assistant' as const)
+                    : ('user' as const),
+
+                content:
+                  message.content,
+              }),
+            );
+
+          /*
+           * Anthropic conversations
+           * should begin with user input.
+           */
+
+          const firstUserIndex =
+            providerMessages.findIndex(
+              (
+                message,
+              ) =>
+                message.role ===
+                'user',
+            );
+
+          const usableMessages =
+            firstUserIndex >=
+            0
+              ? providerMessages.slice(
+                  firstUserIndex,
+                )
+              : providerMessages;
+
+          const response =
+            await getAnthropic()
+              .messages.create(
+                {
+                  model:
+                    process.env
+                      .ANTHROPIC_MODEL ||
+                    'claude-sonnet-5',
+
+                  max_tokens:
+                    1000,
+
+                  system:
+                    SYSTEM_INSTRUCTION,
+
+                  messages:
+                    usableMessages,
+                },
+              );
+
+          const modelText =
+            response.content
+              .filter(
+                (
+                  block,
+                ) =>
+                  block.type ===
+                  'text',
+              )
+              .map(
+                (
+                  block,
+                ) =>
+                  block.text,
+              )
+              .join('\n')
+              .trim();
+
+          if (
+            modelText
+          ) {
+            text =
+              modelText;
+
+            provider =
+              'anthropic';
+
+            appendAuditEvent(
+              'COPILOT_PROVIDER_SUCCESS',
+              'server',
+              'ANTHROPIC',
+            );
+          } else {
+            appendAuditEvent(
+              'COPILOT_PROVIDER_FALLBACK',
+              'server',
+              'ANTHROPIC_EMPTY_RESPONSE',
+            );
+          }
+        } catch (
+          providerError
+        ) {
+          /*
+           * PROVIDER FAILURE IS CONTAINED.
+           * THE APPLICATION CONTINUES.
+           */
+
+          console.error(
+            'Anthropic unavailable; deterministic fallback activated:',
+            providerError,
           );
-        } else {
+
           appendAuditEvent(
             'COPILOT_PROVIDER_FALLBACK',
             'server',
-            'ANTHROPIC_EMPTY_RESPONSE',
+            'ANTHROPIC_ERROR',
           );
         }
-      } catch (providerError) {
-        /*
-         * Provider failure is deliberately contained.
-         * It does NOT become an application failure.
-         */
-
-        console.error(
-          'Anthropic unavailable; deterministic fallback activated:',
-          providerError,
-        );
-
-        appendAuditEvent(
-          'COPILOT_PROVIDER_FALLBACK',
-          'server',
-          'ANTHROPIC_ERROR',
-        );
       }
+
+      return res.json({
+        text,
+
+        trust,
+
+        provider,
+
+        requestId:
+          res.locals
+            .requestId,
+      });
+    } catch (
+      error
+    ) {
+      /*
+       * CONTROL-LAYER ERROR.
+       */
+
+      console.error(
+        'Copilot API error:',
+        error,
+      );
+
+      appendAuditEvent(
+        'COPILOT_ERROR',
+        'server',
+        'CONTROL_LAYER_ERROR',
+      );
+
+      return res
+        .status(500)
+        .json({
+          error:
+            'Unable to process the read-only copilot request',
+
+          requestId:
+            res.locals
+              .requestId,
+        });
     }
+  },
+);
 
-    return res.json({
-      text,
-      trust,
-      provider,
-    });
-  } catch (error) {
-    /*
-     * This catch handles failures in our application/control layer.
-     * Anthropic failures are already contained separately above.
-     */
-
-    console.error('Copilot API error:', error);
-
-    appendAuditEvent(
-      'COPILOT_ERROR',
-      'server',
-      'CONTROL_LAYER_ERROR',
-    );
-
-    return res.status(500).json({
-      error: 'Unable to process the read-only copilot request',
-    });
-  }
-});
+/*
+ * -------------------------------------------------------
+ * START SERVER
+ * -------------------------------------------------------
+ */
 
 async function start() {
-  if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: {
-        middlewareMode: true,
-      },
-      appType: 'spa',
-    });
+  if (
+    process.env
+      .NODE_ENV !==
+    'production'
+  ) {
+    const vite =
+      await createViteServer(
+        {
+          server: {
+            middlewareMode:
+              true,
+          },
 
-    app.use(vite.middlewares);
+          appType:
+            'spa',
+        },
+      );
+
+    app.use(
+      vite.middlewares,
+    );
   } else {
-    const distPath = path.join(
-      process.cwd(),
-      'dist',
+    const distPath =
+      path.join(
+        process.cwd(),
+        'dist',
+      );
+
+    app.use(
+      express.static(
+        distPath,
+      ),
     );
 
-    app.use(express.static(distPath));
-
-    app.get('*', (_req, res) => {
-      res.sendFile(
-        path.join(distPath, 'index.html'),
-      );
-    });
+    app.get(
+      '*',
+      (
+        _req,
+        res,
+      ) => {
+        res.sendFile(
+          path.join(
+            distPath,
+            'index.html',
+          ),
+        );
+      },
+    );
   }
 
   app.listen(
@@ -449,7 +766,8 @@ async function start() {
 
       console.log(
         `AI provider: ${
-          process.env.ANTHROPIC_API_KEY
+          process.env
+            .ANTHROPIC_API_KEY
             ? 'Anthropic'
             : 'deterministic fallback'
         }`,
@@ -458,11 +776,16 @@ async function start() {
   );
 }
 
-start().catch((error) => {
-  console.error(
-    'Failed to start server:',
+start().catch(
+  (
     error,
-  );
+  ) => {
+    console.error(
+      'Failed to start server:',
+      error,
+    );
 
-  process.exitCode = 1;
-});
+    process.exitCode =
+      1;
+  },
+);
