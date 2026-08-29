@@ -1,0 +1,18 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Never publish private research or credentials
+private/
+trusted-core/
+research/
+secrets/
+*.pem
+*.key
+*.p12
+*.pfx
