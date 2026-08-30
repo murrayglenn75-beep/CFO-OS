@@ -587,19 +587,17 @@ export function AuthGate({
     loading
   ) {
     return (
-      <div
-        style={{
-          minHeight:
-            '100vh',
-
-          display:
-            'grid',
-
-          placeItems:
-            'center',
-        }}
-      >
-        Verifying CFO OS session…
+      <div className="auth-shell auth-loading-shell">
+        <div className="auth-loading-card" role="status" aria-live="polite">
+          <div className="auth-brand-mark" aria-hidden="true">
+            <span>CFO</span><b>OS</b>
+          </div>
+          <span className="auth-spinner" aria-hidden="true" />
+          <div>
+            <strong>Verifying secure session</strong>
+            <p>Establishing identity before finance data is exposed.</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -607,156 +605,146 @@ export function AuthGate({
   if (
     !session
   ) {
+    const accountCreated =
+      message.startsWith(
+        'Account created.',
+      );
+
     return (
-      <div
-        style={{
-          minHeight:
-            '100vh',
+      <div className="auth-shell">
+        <div className="auth-stage">
+          <section className="auth-story" aria-label="CFO OS product overview">
+            <div>
+              <div className="auth-brand-row">
+                <div className="auth-brand-mark">
+                  <span>CFO</span><b>OS</b>
+                </div>
+                <span className="auth-demo-chip">Synthetic public demo</span>
+              </div>
 
-          display:
-            'grid',
+              <span className="auth-eyebrow">Governed finance intelligence</span>
+              <h1>Finance truth before AI opinion.</h1>
+              <p className="auth-story-copy">
+                Deterministic close logic, evidence provenance, reconciliation,
+                and governed AI explanation in one auditable operating layer.
+              </p>
+            </div>
 
-          placeItems:
-            'center',
+            <div className="auth-feature-grid">
+              <div className="auth-feature">
+                <span>01</span>
+                <b>Deterministic core</b>
+                <p>Financial calculations remain outside the language model.</p>
+              </div>
+              <div className="auth-feature">
+                <span>02</span>
+                <b>Tenant scoped</b>
+                <p>Identity and organization access are resolved before API use.</p>
+              </div>
+              <div className="auth-feature">
+                <span>03</span>
+                <b>Human authority</b>
+                <p>AI can explain evidence; it cannot approve financial actions.</p>
+              </div>
+            </div>
 
-          padding:
-            24,
+            <div className="auth-trust-note">
+              <span className="auth-status-dot" />
+              <div>
+                <b>Security posture</b>
+                <p>Authenticated · tenant-aware · read-only AI authority</p>
+              </div>
+            </div>
+          </section>
 
-          background:
-            '#07101f',
-
-          color:
-            '#e5edf8',
-        }}
-      >
-        <form
-          onSubmit={
-            signIn
-          }
-          style={{
-            width:
-              'min(420px, 100%)',
-
-            padding:
-              28,
-
-            borderRadius:
-              16,
-
-            background:
-              '#0f172a',
-
-            border:
-              '1px solid #334155',
-          }}
-        >
-          <h1>
-            CFO OS
-          </h1>
-
-          <p>
-            Authenticate before accessing
-            tenant-scoped finance data.
-          </p>
-
-          <input
-            type="email"
-            required
-            placeholder="Email"
-            value={
-              email
-            }
-            onChange={(
-              event,
-            ) =>
-              setEmail(
-                event
-                  .target
-                  .value,
-              )
-            }
-            style={{
-              width:
-                '100%',
-
-              boxSizing:
-                'border-box',
-
-              marginBottom:
-                12,
-
-              padding:
-                12,
-            }}
-          />
-
-          <input
-            type="password"
-            required
-            minLength={
-              8
-            }
-            placeholder="Password"
-            value={
-              password
-            }
-            onChange={(
-              event,
-            ) =>
-              setPassword(
-                event
-                  .target
-                  .value,
-              )
-            }
-            style={{
-              width:
-                '100%',
-
-              boxSizing:
-                'border-box',
-
-              marginBottom:
-                12,
-
-              padding:
-                12,
-            }}
-          />
-
-          <button
-            type="submit"
-            disabled={
-              busy
-            }
+          <form
+            className="auth-card"
+            onSubmit={signIn}
+            aria-busy={busy}
           >
-            Sign in
-          </button>
+            <div className="auth-card-heading">
+              <span className="auth-eyebrow">Secure workspace</span>
+              <h2>Sign in to CFO OS</h2>
+              <p>
+                Authenticate before accessing tenant-scoped finance data.
+              </p>
+            </div>
 
-          <button
-            type="button"
-            disabled={
-              busy
-            }
-            onClick={() => {
-              void signUp();
-            }}
-            style={{
-              marginLeft:
-                10,
-            }}
-          >
-            Create account
-          </button>
+            <div className="auth-field-stack">
+              <label className="auth-field">
+                <span>Email</span>
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  required
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(event) =>
+                    setEmail(
+                      event.target.value,
+                    )
+                  }
+                />
+              </label>
 
-          {message && (
-            <p>
-              {
-                message
-              }
-            </p>
-          )}
-        </form>
+              <label className="auth-field">
+                <span>Password</span>
+                <input
+                  type="password"
+                  name="password"
+                  autoComplete="current-password"
+                  required
+                  minLength={8}
+                  placeholder="Minimum 8 characters"
+                  value={password}
+                  onChange={(event) =>
+                    setPassword(
+                      event.target.value,
+                    )
+                  }
+                />
+              </label>
+            </div>
+
+            <div className="auth-actions">
+              <button
+                className="auth-primary"
+                type="submit"
+                disabled={busy}
+              >
+                {busy ? 'Signing in…' : 'Sign in'}
+                <span aria-hidden="true">→</span>
+              </button>
+
+              <button
+                className="auth-secondary"
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  void signUp();
+                }}
+              >
+                Create account
+              </button>
+            </div>
+
+            {message && (
+              <p
+                className={`auth-message ${accountCreated ? 'success' : ''}`}
+                role={accountCreated ? 'status' : 'alert'}
+                aria-live="polite"
+              >
+                {message}
+              </p>
+            )}
+
+            <div className="auth-card-footer">
+              <span className="auth-status-dot" />
+              <span>Identity is verified before tenant context is loaded.</span>
+            </div>
+          </form>
+        </div>
       </div>
     );
   }
@@ -765,25 +753,17 @@ export function AuthGate({
     tenantLoading
   ) {
     return (
-      <div
-        style={{
-          minHeight:
-            '100vh',
-
-          display:
-            'grid',
-
-          placeItems:
-            'center',
-
-          background:
-            '#07101f',
-
-          color:
-            '#e5edf8',
-        }}
-      >
-        Loading secure tenant context…
+      <div className="auth-shell auth-loading-shell">
+        <div className="auth-loading-card" role="status" aria-live="polite">
+          <div className="auth-brand-mark" aria-hidden="true">
+            <span>CFO</span><b>OS</b>
+          </div>
+          <span className="auth-spinner" aria-hidden="true" />
+          <div>
+            <strong>Loading tenant context</strong>
+            <p>Resolving authorized organization membership.</p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -793,93 +773,60 @@ export function AuthGate({
     0
   ) {
     return (
-      <div
-        style={{
-          minHeight:
-            '100vh',
+      <div className="auth-shell auth-centered-shell">
+        <section className="auth-single-card">
+          <div className="auth-brand-row">
+            <div className="auth-brand-mark">
+              <span>CFO</span><b>OS</b>
+            </div>
+            <span className="auth-verified-chip">Identity verified</span>
+          </div>
 
-          display:
-            'grid',
-
-          placeItems:
-            'center',
-
-          padding:
-            24,
-
-          background:
-            '#07101f',
-
-          color:
-            '#e5edf8',
-        }}
-      >
-        <div
-          style={{
-            width:
-              'min(520px, 100%)',
-
-            padding:
-              28,
-
-            borderRadius:
-              16,
-
-            background:
-              '#0f172a',
-
-            border:
-              '1px solid #334155',
-          }}
-        >
-          <h1>
-            Create your CFO OS organization
-          </h1>
-
+          <span className="auth-eyebrow">Tenant bootstrap</span>
+          <h1>Create your CFO OS organization</h1>
           <p>
-            Your identity is verified. Create
-            the first tenant before accessing
-            finance data.
+            Your identity is verified. Create the first tenant before accessing
+            finance data. Membership will be established server-side.
           </p>
 
-          <button
-            type="button"
-            disabled={
-              busy
-            }
-            onClick={() => {
-              void createOrganization();
-            }}
-          >
-            {busy
-              ? 'Creating…'
-              : 'Create CFO OS organization'}
-          </button>
+          <div className="auth-callout">
+            <span>Authority boundary</span>
+            <b>Organization ownership is derived by the trusted backend.</b>
+          </div>
 
-          <button
-            type="button"
-            disabled={
-              busy
-            }
-            onClick={() => {
-              void signOut();
-            }}
-            style={{
-              marginLeft:
-                10,
-            }}
-          >
-            Sign out
-          </button>
+          <div className="auth-actions auth-actions-row">
+            <button
+              className="auth-primary"
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                void createOrganization();
+              }}
+            >
+              {busy
+                ? 'Creating organization…'
+                : 'Create CFO OS organization'}
+              <span aria-hidden="true">→</span>
+            </button>
+
+            <button
+              className="auth-secondary"
+              type="button"
+              disabled={busy}
+              onClick={() => {
+                void signOut();
+              }}
+            >
+              Sign out
+            </button>
+          </div>
 
           {message && (
-            <p>
-              {
-                message
-              }
+            <p className="auth-message" role="status" aria-live="polite">
+              {message}
             </p>
           )}
-        </div>
+        </section>
       </div>
     );
   }
@@ -888,98 +835,65 @@ export function AuthGate({
     !activeOrganizationId
   ) {
     return (
-      <div
-        style={{
-          minHeight:
-            '100vh',
+      <div className="auth-shell auth-centered-shell">
+        <section className="auth-single-card">
+          <div className="auth-brand-row">
+            <div className="auth-brand-mark">
+              <span>CFO</span><b>OS</b>
+            </div>
+            <span className="auth-verified-chip">Authenticated</span>
+          </div>
 
-          display:
-            'grid',
+          <span className="auth-eyebrow">Organization context</span>
+          <h1>Select organization</h1>
+          <p>
+            Choose an organization already authorized for this account.
+          </p>
 
-          placeItems:
-            'center',
+          <div className="auth-org-list">
+            {memberships.map(
+              (
+                membership,
+              ) => (
+                <button
+                  key={membership.organization_id}
+                  type="button"
+                  className="auth-org-option"
+                  onClick={() =>
+                    selectOrganization(
+                      membership.organization_id,
+                    )
+                  }
+                >
+                  <span>
+                    <b>{membership.role}</b>
+                    <small>{membership.organization_id}</small>
+                  </span>
+                  <span aria-hidden="true">→</span>
+                </button>
+              ),
+            )}
+          </div>
 
-          padding:
-            24,
-
-          background:
-            '#07101f',
-
-          color:
-            '#e5edf8',
-        }}
-      >
-        <div>
-          <h1>
-            Select organization
-          </h1>
-
-          {memberships.map(
-            (
-              membership,
-            ) => (
-              <button
-                key={
-                  membership
-                    .organization_id
-                }
-                type="button"
-                onClick={() =>
-                  selectOrganization(
-                    membership
-                      .organization_id,
-                  )
-                }
-              >
-                {
-                  membership.role
-                }{' '}
-                —{' '}
-                {
-                  membership
-                    .organization_id
-                }
-              </button>
-            ),
-          )}
+          <button
+            className="auth-link-button"
+            type="button"
+            onClick={() => {
+              void signOut();
+            }}
+          >
+            Sign out of this account
+          </button>
 
           {message && (
-            <p>
-              {
-                message
-              }
+            <p className="auth-message" role="alert" aria-live="polite">
+              {message}
             </p>
           )}
-        </div>
+        </section>
       </div>
     );
   }
 
-  return (
-    <>
-      {children}
-
-      <button
-        type="button"
-        onClick={() => {
-          void signOut();
-        }}
-        style={{
-          position:
-            'fixed',
-
-          right:
-            18,
-
-          bottom:
-            18,
-
-          zIndex:
-            1000,
-        }}
-      >
-        Sign out
-      </button>
-    </>
-  );
+  return <>{children}</>;
 }

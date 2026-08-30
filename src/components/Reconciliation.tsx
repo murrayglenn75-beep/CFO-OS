@@ -211,7 +211,7 @@ export const Reconciliation: React.FC<ReconciliationProps> = ({ records: initial
                   {isUnmatched && (
                     <button
                       onClick={() => handleAssignVendor(record.id, 'Parkview Hospitality LLC')}
-                      className="px-3 py-1.5 bg-brass text-white hover:bg-brass-dim rounded-lg text-xxs font-sans uppercase tracking-wider flex items-center gap-1 cursor-pointer font-bold"
+                      className="px-3 py-1.5 bg-brass force-dark-on-lime hover:bg-brass-dim rounded-lg text-xxs font-sans uppercase tracking-wider flex items-center gap-1 cursor-pointer font-bold"
                     >
                       <UserPlus className="w-3.5 h-3.5" /> Assign to NetSuite Vendor
                     </button>

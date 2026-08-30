@@ -348,7 +348,7 @@ export const VarianceExplorer: React.FC<VarianceExplorerProps> = ({ onNavigate }
                   }}
                   className={`px-3 py-1 font-mono text-xs rounded-md uppercase tracking-wide transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-brass text-white font-bold'
+                      ? 'bg-brass force-dark-on-lime font-bold'
                       : 'text-slate hover:text-paper'
                   }`}
                   title={`Focus the driver tree on ${metric}`}

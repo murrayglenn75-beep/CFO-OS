@@ -124,15 +124,15 @@ export const CalculationEngine: React.FC<CalculationEngineProps> = ({ nodes }) =
                     onClick={() => handleNodeClick(node.id)}
                     className={`w-full text-left p-5 rounded-xl shadow-soft border transition-all relative cursor-pointer flex flex-col justify-between ${
                       isSelected 
-                        ? 'bg-brass text-white border-paper shadow-lg font-bold' 
-                        : 'bg-brass/90 hover:bg-brass text-white border-ink-700'
+                        ? 'bg-brass force-dark-on-lime border-paper shadow-lg font-bold' 
+                        : 'bg-brass/90 hover:bg-brass force-dark-on-lime border-ink-700'
                     }`}
                   >
                     <div className="flex items-start justify-between">
                       <span className="text-xs font-semibold font-mono uppercase tracking-widest">FINAL CLOSING OUTPUT</span>
                       <span className="text-[10px] font-mono shrink-0">{node.version}</span>
                     </div>
-                    <h4 className="text-xl font-sans font-semibold mt-3 text-white">{node.label}</h4>
+                    <h4 className="text-xl font-sans font-semibold mt-3" style={{ color: '#071016' }}>{node.label}</h4>
                     <div className="text-xl font-mono mt-1 font-bold">{node.value}</div>
                     <span className="text-[10px] font-mono block mt-2 opacity-80 uppercase tracking-wider">{node.formula}</span>
                   </button>
@@ -198,7 +198,7 @@ export const CalculationEngine: React.FC<CalculationEngineProps> = ({ nodes }) =
               </div>
 
               <div className="pt-2 border-t border-ink-700/60 pb-1 text-xxs leading-relaxed font-light text-paper-dim">
-                This computation resolves directly over <span className="font-semibold text-paper">production close schema</span>, preserving version and snapshot references for every node. Change code to deploy metric updates instantly.
+                This computation resolves directly over <span className="font-semibold text-paper">canonical close schema</span>, preserving version and snapshot references for every node. Metric-definition changes remain explicit and version-controlled.
               </div>
             </div>
           </div>

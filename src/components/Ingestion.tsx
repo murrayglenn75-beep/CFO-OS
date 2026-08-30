@@ -97,10 +97,10 @@ export const Ingestion: React.FC<IngestionProps> = ({ sources }) => {
             className={`mt-6 px-5 py-2.5 rounded-lg font-sans text-xs tracking-wider uppercase inline-flex items-center gap-2 transition-all ${
               isRunning 
                 ? 'bg-ink-700 text-slate cursor-not-allowed' 
-                 : 'bg-brass text-white hover:bg-brass-dim hover:text-paper cursor-pointer font-bold'
+                 : 'bg-brass force-dark-on-lime hover:bg-brass-dim cursor-pointer font-bold'
             }`}
             id="run-ingestion-button"
-          >
+           style={{ color: '#071016' }}>
             <Play className={`w-3.5 h-3.5 ${isRunning ? 'animate-spin' : ''}`} />
             {isRunning ? 'Ingestion In Progress...' : 'Run Ingestion Cycle'}
           </button>
