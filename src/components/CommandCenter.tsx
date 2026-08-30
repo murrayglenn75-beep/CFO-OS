@@ -43,7 +43,13 @@ export const CommandCenter: React.FC<Props> = ({ data, onNavigate }) => {
         <article className="panel-card performance-panel">
           <div className="panel-title-row"><div><span className="eyebrow">12-MONTH VIEW</span><h2>Revenue and cash trajectory</h2></div><span className="micro-note">Synthetic demo data</span></div>
           <div className="chart-wrap">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer
+              width="100%"
+              height="100%"
+              minWidth={0}
+              minHeight={0}
+              initialDimension={{ width: 800, height: 285 }}
+            >
               <AreaChart data={data} margin={{ left: 0, right: 10, top: 12, bottom: 0 }}>
                 <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--c-brass)" stopOpacity={0.28}/><stop offset="95%" stopColor="var(--c-brass)" stopOpacity={0}/></linearGradient></defs>
                 <CartesianGrid vertical={false} stroke="var(--c-ink-700)" strokeDasharray="3 3" />

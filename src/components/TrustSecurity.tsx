@@ -367,7 +367,7 @@ export const TrustSecurity:
 
                     {result.role && (
                       <small>
-                        Database role:{' '}
+                        Resolved role:{' '}
                         {
                           result.role
                         }

@@ -10,9 +10,11 @@ import { AuditTrail } from './components/AuditTrail';
 import { RoiImpact } from './components/RoiImpact';
 import { VarianceExplorer } from './components/VarianceExplorer';
 import { TrustSecurity } from './components/TrustSecurity';
+import { supabase } from './lib/supabase';
+import { clearActiveOrganizationId } from './lib/api';
 import {
   LayoutDashboard, Database, ArrowUpDown, Binary, BotMessageSquare, History,
-  TrendingUp, GitBranch, ShieldCheck, Sun, Moon, FlaskConical, CircleDot
+  TrendingUp, GitBranch, ShieldCheck, Sun, Moon, FlaskConical, CircleDot, LogOut
 } from 'lucide-react';
 
 export default function App() {
@@ -20,6 +22,11 @@ export default function App() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
   useEffect(() => { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+
+  const handleSignOut = async () => {
+    clearActiveOrganizationId();
+    await supabase.auth.signOut();
+  };
 
   const navItems: NavItem[] = [
     { id: '01', view: 'command_center', label: 'Command Center', icon: 'LayoutDashboard' },
@@ -73,13 +80,17 @@ export default function App() {
           <div className="system-status"><CircleDot className="w-3.5 h-3.5"/><div><span>Close state</span><b>Review required</b></div></div>
           <div className="sidebar-metrics"><span>Evidence <b>94</b></span><span>Agreement <b>86%</b></span></div>
           <p>Model authority: <b>read only</b></p>
+          <button className="sidebar-signout" type="button" onClick={() => { void handleSignOut(); }}>
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign out</span>
+          </button>
         </div>
       </aside>
 
       <div className="app-main">
         <header className="topbar">
           <div className="topbar-left"><span className="close-chip">MAY 2026 · FINAL CLOSE</span><span className="snapshot">Snapshot 01 Jun 2026 · 05:14 UTC</span></div>
-          <div className="topbar-right"><span className="authority-chip"><ShieldCheck className="w-3.5 h-3.5"/> Human execution authority</span><button className="theme-toggle" onClick={() => setTheme((x) => x === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}</button></div>
+          <div className="topbar-right"><span className="authority-chip"><ShieldCheck className="w-3.5 h-3.5"/> Human execution authority</span><button className="mobile-signout" type="button" aria-label="Sign out" title="Sign out" onClick={() => { void handleSignOut(); }}><LogOut className="w-4 h-4"/></button><button className="theme-toggle" onClick={() => setTheme((x) => x === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}</button></div>
         </header>
         <main className="content-canvas">{renderView()}</main>
       </div>
