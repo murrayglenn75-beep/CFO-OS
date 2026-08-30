@@ -327,6 +327,43 @@ The current rate limiter is process-local and is not presented as distributed pr
 
 ---
 
+# Identity, tenant isolation, and RLS
+
+CFO OS v2.1 adds an authenticated multi-tenant security boundary using Supabase.
+
+Current controls include:
+
+- Supabase access-token verification on protected API routes,
+- organization membership resolution before tenant-scoped access,
+- `X-Organization-ID` as a selector only — never as proof of authority,
+- server-resolved application roles derived from database membership,
+- database roles: `owner`, `cfo`, `controller`, `accountant`, `viewer`,
+- Row Level Security on tenant-aware finance and audit tables,
+- forced RLS on protected application tables,
+- least-privilege grants,
+- authenticated organization bootstrap,
+- no service-role credential in the public application path,
+- client-supplied authorization roles rejected by the API.
+
+Protected routes include:
+
+```text
+GET  /api/audit
+POST /api/copilot/chat
+POST /api/actions/qualify
+```
+
+First-tenant bootstrap uses:
+
+```text
+POST /api/organizations/bootstrap
+```
+
+Tenant selection does not create authority. The server verifies that the authenticated user actually holds membership in the requested organization before resolving a role.
+
+---
+
+
 # Anthropic integration
 
 CFO OS supports an optional server-side Anthropic provider.
@@ -406,7 +443,11 @@ It is **not yet durable production audit storage**.
 
 # Automated security and governance tests
 
-The current regression suite contains **16 tests** covering:
+The current regression suite contains **24 tests**.
+
+The suite covers two security layers:
+
+**Governed AI / trust controls**
 
 1. obvious prompt injection,
 2. historical conversation injection,
@@ -425,10 +466,21 @@ The current regression suite contains **16 tests** covering:
 15. role-based board-pack restrictions,
 16. fail-closed invalid authorization evidence.
 
-Current local validation:
+**Identity / tenant controls**
+
+17. missing bearer token fails closed,
+18. malformed authorization scheme fails closed,
+19. owner membership resolves to CFO application authority,
+20. viewer membership remains viewer authority,
+21. cross-tenant selectors are denied without membership,
+22. multiple memberships require explicit tenant selection,
+23. membership lookup failures fail closed,
+24. invalid database roles are rejected.
+
+Current v2.1 validation:
 
 ```text
-Security tests       16 / 16 passing
+Security tests       24 / 24 passing
 TypeScript           PASS
 Production build     PASS
 Dependency audit     0 vulnerabilities
@@ -529,6 +581,9 @@ Example:
 ```text
 ANTHROPIC_API_KEY=
 ANTHROPIC_MODEL=claude-sonnet-5
+
+SUPABASE_URL=
+SUPABASE_PUBLISHABLE_KEY=
 
 PORT=3000
 ```
@@ -674,15 +729,13 @@ CFO OS does **not** contain the private Brain AI resolver, hidden research corpo
 
 This repository is an advanced portfolio/reference implementation, not a production-certified financial platform.
 
-It does not yet include:
+v2.1 now includes authenticated identity, organization membership, server-resolved tenant roles, PostgreSQL-backed tenant data, and Row Level Security.
 
-- production user authentication,
-- organization/tenant identity,
-- PostgreSQL-backed authorization,
-- Row Level Security,
-- durable database-backed audit storage,
-- enterprise IAM,
-- hardware-backed secret management,
+It does **not** yet include:
+
+- durable database-backed append-only audit storage,
+- enterprise IAM / SSO federation,
+- hardware-backed or cloud-KMS secret management,
 - distributed rate limiting,
 - external WAF enforcement,
 - complete enterprise DLP,
@@ -692,39 +745,33 @@ It does not yet include:
 - formal verification,
 - compliance certification.
 
-These limitations are deliberately documented.
+The current hash-linked audit stream remains application-memory state and is not presented as durable audit evidence.
 
 ---
 
 # Next architecture phase
 
-The next major phase is identity and tenant security:
+The next major phase is **v2.2 durable audit and production infrastructure**:
 
 ```text
-Authentication
+Authenticated tenant context
       ↓
-Organization identity
+Database-backed append-only audit
       ↓
-Membership
+Stronger release integrity
       ↓
-Database-backed roles
+Distributed abuse controls
       ↓
-PostgreSQL authorization
+Managed secrets / KMS
       ↓
-Row Level Security
-      ↓
-Cross-tenant isolation tests
-      ↓
-Durable audit evidence
+External adversarial validation
 ```
-
-This is the step that moves CFO OS from a governed-AI reference implementation toward a real multi-tenant application security architecture.
 
 ---
 
 # Status
 
-**Current milestone: CFO OS v2.0 — Governed AI Security Hardening**
+**Current milestone: CFO OS v2.1 — Identity, Tenant Isolation & RLS**
 
 Current validated capabilities:
 
@@ -737,12 +784,17 @@ Prompt-injection containment        ✓
 Sensitive-data redaction            ✓
 Outbound DLP inspection             ✓
 Final fail-closed egress gate       ✓
+Supabase identity verification      ✓
+Organization membership boundary    ✓
+Server-resolved tenant roles        ✓
+PostgreSQL Row Level Security       ✓
+Cross-tenant selector denial        ✓
 Deterministic action authority      ✓
 Human-only payment execution        ✓
 Hash-linked runtime audit           ✓
 Request tracing                     ✓
 HTTP/API boundary hardening         ✓
-16 security regression tests        ✓
+24 security regression tests        ✓
 Dependency vulnerabilities          0
 Public leakage scan                 ✓
 Security CI pipeline                ✓
@@ -750,7 +802,7 @@ Security CI pipeline                ✓
 
 Next milestone:
 
-**CFO OS v2.1 — Identity, Tenant Isolation & RLS**
+**CFO OS v2.2 — Durable Audit & Production Infrastructure**
 
 ---
 

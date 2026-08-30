@@ -1,21 +1,38 @@
-# Validation
+# Validation — CFO OS v2.1
 
-The public rebuild includes deterministic tests for the trust/security layer.
+The public build includes deterministic regression tests for both the governed-AI trust layer and the identity/tenant boundary.
 
-Current test targets:
+## Automated test suite
 
-1. obvious prompt-injection patterns are raised to `ELEVATED`,
-2. selected sensitive identifiers are redacted,
-3. forward-looking requests are labeled `MODEL_ESTIMATE`,
-4. model-driven payment execution remains human-controlled,
-5. viewer role cannot publish a board pack.
+Current result:
 
-Run:
-
-```bash
-npm test
-npm run lint
-npm run build
+```text
+24 / 24 passing
 ```
 
-Additional production work should include API integration tests, property testing of finance calculations, replay tests for audit storage, authentication/authorization tests, dependency scanning, SAST/DAST and external adversarial testing.
+Coverage includes prompt-injection detection, sensitive-data redaction, outbound secret blocking, fail-closed trust behavior, payment-authority separation, viewer authorization restrictions, missing/malformed bearer authentication, server-side role resolution, cross-tenant denial, explicit multi-tenant selection, lookup failure, and invalid-role rejection.
+
+## Release validation commands
+
+```bash
+npm run security:scan-public
+npm run lint
+npm test
+npm audit
+npm run build
+npm run verify:manifest
+```
+
+Current validated state before the v2.1 release commit:
+
+```text
+TypeScript           PASS
+Tests                24 / 24 PASS
+Production build     PASS
+Dependency audit     0 vulnerabilities
+Public leakage scan  PASS
+```
+
+The production build may emit a non-blocking Vite chunk-size warning for the current client bundle.
+
+Automated tests improve regression confidence but are not equivalent to independent penetration testing, formal verification, or compliance certification.
