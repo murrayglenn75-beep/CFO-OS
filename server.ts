@@ -28,7 +28,12 @@ import {
 dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.PORT || 3000);
+
+const PORT =
+  Number(
+    process.env.PORT ||
+      3000,
+  );
 
 /*
  * -------------------------------------------------------
@@ -36,10 +41,21 @@ const PORT = Number(process.env.PORT || 3000);
  * -------------------------------------------------------
  */
 
-app.disable('x-powered-by');
+app.disable(
+  'x-powered-by',
+);
 
-app.use(requestId);
-app.use(securityHeaders);
+app.disable(
+  'etag',
+);
+
+app.use(
+  requestId,
+);
+
+app.use(
+  securityHeaders,
+);
 
 app.use(
   express.json({
@@ -48,8 +64,15 @@ app.use(
   }),
 );
 
-app.use('/api', apiRateLimit);
-app.use('/api', requireJson);
+app.use(
+  '/api',
+  apiRateLimit,
+);
+
+app.use(
+  '/api',
+  requireJson,
+);
 
 /*
  * -------------------------------------------------------
@@ -132,11 +155,14 @@ the spend reconciles to approved card and bank records.
  * -------------------------------------------------------
  */
 
-let anthropicClient: Anthropic | null = null;
+let anthropicClient:
+  Anthropic | null =
+  null;
 
 function getAnthropic() {
   const apiKey =
-    process.env.ANTHROPIC_API_KEY;
+    process.env
+      .ANTHROPIC_API_KEY;
 
   if (!apiKey) {
     throw new Error(
@@ -144,12 +170,18 @@ function getAnthropic() {
     );
   }
 
-  if (!anthropicClient) {
+  if (
+    !anthropicClient
+  ) {
     anthropicClient =
       new Anthropic({
         apiKey,
-        timeout: 20_000,
-        maxRetries: 1,
+
+        timeout:
+          20_000,
+
+        maxRetries:
+          1,
       });
   }
 
@@ -168,7 +200,9 @@ function fallbackAnswer(
   const q =
     question.toLowerCase();
 
-  if (/ebitda/.test(q)) {
+  if (
+    /ebitda/.test(q)
+  ) {
     return (
       'May EBITDA is **-$137,008**, down from **+$236,562** in April. ' +
       'The main drivers are the **18.0% revenue decline** from two renewals ' +
@@ -179,7 +213,9 @@ function fallbackAnswer(
   }
 
   if (
-    /board|summary|executive/.test(q)
+    /board|summary|executive/.test(
+      q,
+    )
   ) {
     return (
       '**Revenue:** $1.862M (-18.0% MoM).\n\n' +
@@ -192,7 +228,9 @@ function fallbackAnswer(
   }
 
   if (
-    /forecast|predict|q3|scenario/.test(q)
+    /forecast|predict|q3|scenario/.test(
+      q,
+    )
   ) {
     return (
       'Model estimate: if the two delayed renewals convert in June and recent ' +
@@ -203,7 +241,9 @@ function fallbackAnswer(
   }
 
   if (
-    /exception|reconcil/.test(q)
+    /exception|reconcil/.test(
+      q,
+    )
   ) {
     return (
       'Two exceptions need review: **one cross-system entity conflict with ' +
@@ -228,19 +268,28 @@ function fallbackAnswer(
 
 app.get(
   '/api/health',
-  (_req, res) => {
+  (
+    _req,
+    res,
+  ) => {
     res.json({
       ok: true,
-      mode: 'public-demo',
-      modelAuthority: 'read-only',
+
+      mode:
+        'public-demo',
+
+      modelAuthority:
+        'read-only',
 
       aiProvider:
-        process.env.ANTHROPIC_API_KEY
+        process.env
+          .ANTHROPIC_API_KEY
           ? 'anthropic'
           : 'deterministic-fallback',
 
       requestId:
-        res.locals.requestId,
+        res.locals
+          .requestId,
     });
   },
 );
@@ -253,13 +302,17 @@ app.get(
 
 app.get(
   '/api/audit',
-  (_req, res) => {
+  (
+    _req,
+    res,
+  ) => {
     res.json({
       events:
         getAuditEvents(),
 
       requestId:
-        res.locals.requestId,
+        res.locals
+          .requestId,
     });
   },
 );
@@ -272,7 +325,11 @@ app.get(
 
 app.post(
   '/api/actions/qualify',
-  (req, res) => {
+
+  (
+    req,
+    res,
+  ) => {
     const body =
       req.body || {};
 
@@ -282,13 +339,17 @@ app.post(
         'CONTROLLER',
         'ACCOUNTANT',
         'VIEWER',
-      ].includes(body.role) ||
+      ].includes(
+        body.role,
+      ) ||
       ![
         'EXPORT_JOURNAL',
         'APPROVE_RECONCILIATION',
         'SEND_PAYMENT',
         'PUBLISH_BOARD_PACK',
-      ].includes(body.action)
+      ].includes(
+        body.action,
+      )
     ) {
       return res
         .status(400)
@@ -297,7 +358,8 @@ app.post(
             'Invalid action qualification request',
 
           requestId:
-            res.locals.requestId,
+            res.locals
+              .requestId,
         });
     }
 
@@ -321,7 +383,9 @@ app.post(
         evidenceQuality,
         sourceAgreement,
         unresolvedExceptions,
-      ].every(Number.isFinite)
+      ].every(
+        Number.isFinite,
+      )
     ) {
       return res
         .status(400)
@@ -330,7 +394,8 @@ app.post(
             'Policy evidence inputs must be finite numbers',
 
           requestId:
-            res.locals.requestId,
+            res.locals
+              .requestId,
         });
     }
 
@@ -351,7 +416,9 @@ app.post(
 
     appendAuditEvent(
       'ACTION_QUALIFICATION',
+
       body.role,
+
       `${body.action}:${result.status}`,
     );
 
@@ -359,7 +426,8 @@ app.post(
       ...result,
 
       requestId:
-        res.locals.requestId,
+        res.locals
+          .requestId,
     });
   },
 );
@@ -372,14 +440,21 @@ app.post(
 
 app.post(
   '/api/copilot/chat',
-  async (req, res) => {
+
+  async (
+    req,
+    res,
+  ) => {
     try {
       const messages =
         validateMessages(
-          req.body?.messages,
+          req.body
+            ?.messages,
         );
 
-      if (!messages) {
+      if (
+        !messages
+      ) {
         return res
           .status(400)
           .json({
@@ -387,7 +462,8 @@ app.post(
               'Invalid messages payload',
 
             requestId:
-              res.locals.requestId,
+              res.locals
+                .requestId,
           });
       }
 
@@ -405,7 +481,8 @@ app.post(
               'Last message must be from the user',
 
             requestId:
-              res.locals.requestId,
+              res.locals
+                .requestId,
           });
       }
 
@@ -414,16 +491,16 @@ app.post(
        * SECURITY STAGE 1:
        * PROMPT-INJECTION DETECTION
        *
-       * Inspect the ENTIRE conversation, not only the final
-       * user message. An attack hidden earlier in history
-       * must not acquire authority later.
+       * Inspect the ENTIRE conversation.
        * ---------------------------------------------------
        */
 
       const conversationText =
         messages
           .map(
-            (message) =>
+            (
+              message,
+            ) =>
               message.content,
           )
           .join('\n');
@@ -445,7 +522,9 @@ app.post(
 
       const cleaned =
         messages.map(
-          (message) => {
+          (
+            message,
+          ) => {
             const result =
               redactSensitiveInput(
                 message.content,
@@ -456,6 +535,7 @@ app.post(
 
             return {
               ...message,
+
               content:
                 result.text,
             };
@@ -466,18 +546,15 @@ app.post(
        * ---------------------------------------------------
        * SECURITY STAGE 3:
        * OUTBOUND MODEL-EGRESS INSPECTION
-       *
-       * This inspection runs AFTER redaction.
-       *
-       * If sensitive material survived redaction,
-       * the external model provider is NOT called.
        * ---------------------------------------------------
        */
 
       const cleanedConversation =
         cleaned
           .map(
-            (message) =>
+            (
+              message,
+            ) =>
               message.content,
           )
           .join('\n');
@@ -496,22 +573,26 @@ app.post(
       const trust =
         buildTrustEnvelope(
           last.content,
+
           injectionRisk,
+
           redactionsApplied,
-          outboundInspection.risk,
+
+          outboundInspection
+            .risk,
         );
 
       appendAuditEvent(
         'COPILOT_QUERY',
+
         'demo-user',
+
         `${trust.status}:${trust.auditId}`,
       );
 
       /*
        * ---------------------------------------------------
        * PROMPT-INJECTION CONTAINMENT
-       *
-       * Elevated injection attempts never reach Claude.
        * ---------------------------------------------------
        */
 
@@ -521,7 +602,9 @@ app.post(
       ) {
         appendAuditEvent(
           'COPILOT_SECURITY_BLOCK',
+
           'demo-user',
+
           'PROMPT_INJECTION_ELEVATED',
         );
 
@@ -538,29 +621,30 @@ app.post(
             'security-control',
 
           requestId:
-            res.locals.requestId,
+            res.locals
+              .requestId,
         });
       }
 
       /*
        * ---------------------------------------------------
        * DATA-LOSS / EGRESS CONTAINMENT
-       *
-       * If any sensitive material remains AFTER redaction,
-       * no provider request is permitted.
        * ---------------------------------------------------
        */
 
       if (
-        outboundInspection.risk ===
+        outboundInspection
+          .risk ===
         'ELEVATED'
       ) {
         appendAuditEvent(
           'COPILOT_DLP_BLOCK',
+
           'demo-user',
-          outboundInspection.reasons.join(
-            ',',
-          ) ||
+
+          outboundInspection
+            .reasons
+            .join(',') ||
             'OUTBOUND_DLP_ELEVATED',
         );
 
@@ -577,14 +661,15 @@ app.post(
             'security-control',
 
           requestId:
-            res.locals.requestId,
+            res.locals
+              .requestId,
         });
       }
 
       /*
        * ---------------------------------------------------
        * DETERMINISTIC FALLBACK EXISTS BEFORE
-       * MODEL EXECUTION.
+       * MODEL EXECUTION
        * ---------------------------------------------------
        */
 
@@ -605,14 +690,18 @@ app.post(
        */
 
       if (
-        process.env.ANTHROPIC_API_KEY
+        process.env
+          .ANTHROPIC_API_KEY
       ) {
         try {
           const providerMessages =
             cleaned.map(
-              (message) => ({
+              (
+                message,
+              ) => ({
                 role:
-                  message.role ===
+                  message
+                    .role ===
                   'assistant'
                     ? ('assistant' as const)
                     : ('user' as const),
@@ -623,19 +712,24 @@ app.post(
             );
 
           /*
-           * Anthropic conversation history should
-           * begin with a user message.
+           * Anthropic conversation history
+           * must begin with a user message.
            */
 
           const firstUserIndex =
-            providerMessages.findIndex(
-              (message) =>
-                message.role ===
-                'user',
-            );
+            providerMessages
+              .findIndex(
+                (
+                  message,
+                ) =>
+                  message
+                    .role ===
+                  'user',
+              );
 
           const usableMessages =
-            firstUserIndex >= 0
+            firstUserIndex >=
+            0
               ? providerMessages.slice(
                   firstUserIndex,
                 )
@@ -643,15 +737,14 @@ app.post(
 
           /*
            * FINAL FAIL-CLOSED EGRESS CHECK.
-           *
-           * Check exactly what is about to leave
-           * the application boundary.
            */
 
           const finalOutboundText =
             usableMessages
               .map(
-                (message) =>
+                (
+                  message,
+                ) =>
                   message.content,
               )
               .join('\n');
@@ -662,15 +755,18 @@ app.post(
             );
 
           if (
-            finalInspection.risk ===
+            finalInspection
+              .risk ===
             'ELEVATED'
           ) {
             appendAuditEvent(
               'COPILOT_DLP_BLOCK',
+
               'server',
-              finalInspection.reasons.join(
-                ',',
-              ) ||
+
+              finalInspection
+                .reasons
+                .join(',') ||
                 'FINAL_EGRESS_CHECK_FAILED',
             );
 
@@ -682,8 +778,11 @@ app.post(
               trust:
                 buildTrustEnvelope(
                   last.content,
+
                   injectionRisk,
+
                   redactionsApplied,
+
                   'ELEVATED',
                 ),
 
@@ -691,13 +790,21 @@ app.post(
                 'security-control',
 
               requestId:
-                res.locals.requestId,
+                res.locals
+                  .requestId,
             });
           }
 
+          /*
+           * ---------------------------------------------------
+           * ANTHROPIC CALL
+           * ---------------------------------------------------
+           */
+
           const response =
             await getAnthropic()
-              .messages.create({
+              .messages
+              .create({
                 model:
                   process.env
                     .ANTHROPIC_MODEL ||
@@ -716,18 +823,24 @@ app.post(
           const modelText =
             response.content
               .filter(
-                (block) =>
+                (
+                  block,
+                ) =>
                   block.type ===
                   'text',
               )
               .map(
-                (block) =>
+                (
+                  block,
+                ) =>
                   block.text,
               )
               .join('\n')
               .trim();
 
-          if (modelText) {
+          if (
+            modelText
+          ) {
             text =
               modelText;
 
@@ -736,13 +849,17 @@ app.post(
 
             appendAuditEvent(
               'COPILOT_PROVIDER_SUCCESS',
+
               'server',
+
               'ANTHROPIC',
             );
           } else {
             appendAuditEvent(
               'COPILOT_PROVIDER_FALLBACK',
+
               'server',
+
               'ANTHROPIC_EMPTY_RESPONSE',
             );
           }
@@ -750,20 +867,20 @@ app.post(
           providerError
         ) {
           /*
-           * Provider failure is contained.
-           *
-           * Anthropic failure cannot become
-           * application failure.
+           * Provider failures are contained.
            */
 
           console.error(
             'Anthropic unavailable; deterministic fallback activated:',
+
             providerError,
           );
 
           appendAuditEvent(
             'COPILOT_PROVIDER_FALLBACK',
+
             'server',
+
             'ANTHROPIC_ERROR',
           );
         }
@@ -771,25 +888,33 @@ app.post(
 
       return res.json({
         text,
+
         trust,
+
         provider,
 
         requestId:
-          res.locals.requestId,
+          res.locals
+            .requestId,
       });
-    } catch (error) {
+    } catch (
+      error
+    ) {
       /*
        * Application/control-layer failure.
        */
 
       console.error(
         'Copilot API error:',
+
         error,
       );
 
       appendAuditEvent(
         'COPILOT_ERROR',
+
         'server',
+
         'CONTROL_LAYER_ERROR',
       );
 
@@ -800,7 +925,8 @@ app.post(
             'Unable to process the read-only copilot request',
 
           requestId:
-            res.locals.requestId,
+            res.locals
+              .requestId,
         });
     }
   },
@@ -814,7 +940,8 @@ app.post(
 
 async function start() {
   if (
-    process.env.NODE_ENV !==
+    process.env
+      .NODE_ENV !==
     'production'
   ) {
     const vite =
@@ -835,6 +962,7 @@ async function start() {
     const distPath =
       path.join(
         process.cwd(),
+
         'dist',
       );
 
@@ -846,10 +974,15 @@ async function start() {
 
     app.get(
       '*',
-      (_req, res) => {
+
+      (
+        _req,
+        res,
+      ) => {
         res.sendFile(
           path.join(
             distPath,
+
             'index.html',
           ),
         );
@@ -859,7 +992,9 @@ async function start() {
 
   app.listen(
     PORT,
+
     '0.0.0.0',
+
     () => {
       console.log(
         `CFO OS serving on port ${PORT}`,
@@ -867,7 +1002,8 @@ async function start() {
 
       console.log(
         `AI provider: ${
-          process.env.ANTHROPIC_API_KEY
+          process.env
+            .ANTHROPIC_API_KEY
             ? 'Anthropic'
             : 'deterministic fallback'
         }`,
@@ -877,12 +1013,16 @@ async function start() {
 }
 
 start().catch(
-  (error) => {
+  (
+    error,
+  ) => {
     console.error(
       'Failed to start server:',
+
       error,
     );
 
-    process.exitCode = 1;
+    process.exitCode =
+      1;
   },
 );

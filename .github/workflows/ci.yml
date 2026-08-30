@@ -1,23 +1,52 @@
-name: CI
+name: CFO OS Security CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+
   pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
 
+concurrency:
+  group: cfo-os-ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
+    name: Validate & Security Gate
     runs-on: ubuntu-latest
+
+    timeout-minutes: 15
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
-      - run: npm run build
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Public-release leakage scan
+        run: npm run security:scan-public
+
+      - name: TypeScript validation
+        run: npm run lint
+
+      - name: Security and governance tests
+        run: npm test
+
+      - name: Dependency vulnerability audit
+        run: npm audit
+
+      - name: Production build
+        run: npm run build

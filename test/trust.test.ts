@@ -32,7 +32,9 @@ test('detects injection hidden earlier in conversation history', () => {
   ].join('\n');
 
   assert.equal(
-    detectPromptInjection(conversation),
+    detectPromptInjection(
+      conversation,
+    ),
     'ELEVATED',
   );
 });
@@ -60,8 +62,15 @@ test('redacts email and SSN-style identifiers', () => {
 });
 
 test('redacts Anthropic-style API keys', () => {
+  /*
+   * Construct synthetic key dynamically
+   * so repository secret scanners do not
+   * mistake the fixture for a credential.
+   */
+
   const fakeKey =
-    'sk-ant-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    'sk-ant-' +
+    'a'.repeat(32);
 
   const result =
     redactSensitiveInput(
@@ -85,9 +94,12 @@ test('redacts Anthropic-style API keys', () => {
 });
 
 test('redacts bearer tokens', () => {
+  const fakeBearer =
+    'a'.repeat(32);
+
   const result =
     redactSensitiveInput(
-      'Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456',
+      `Authorization: Bearer ${fakeBearer}`,
     );
 
   assert.equal(
@@ -102,13 +114,22 @@ test('redacts bearer tokens', () => {
 
   assert.doesNotMatch(
     result.text,
-    /abcdefghijklmnopqrstuvwxyz123456/,
+    new RegExp(
+      fakeBearer,
+    ),
   );
 });
 
 test('redacts JWT-like tokens', () => {
   const fakeJwt =
-    'eyJaaaaaaaaaaaa.bbbbbbbbbbbb.cccccccccccc';
+    [
+      'eyJ' +
+        'a'.repeat(12),
+
+      'b'.repeat(12),
+
+      'c'.repeat(12),
+    ].join('.');
 
   const result =
     redactSensitiveInput(
@@ -124,14 +145,33 @@ test('redacts JWT-like tokens', () => {
     result.text,
     /redacted-jwt/,
   );
+
+  assert.doesNotMatch(
+    result.text,
+    /eyJ/,
+  );
 });
 
 test('redacts private-key material', () => {
-  const fakePrivateKey = `
------BEGIN PRIVATE KEY-----
-THISISONLYSYNTHETICTESTMATERIAL
------END PRIVATE KEY-----
-`;
+  /*
+   * Construct the PEM markers dynamically
+   * so the public repository scanner does
+   * not identify this synthetic fixture as
+   * committed private-key material.
+   */
+
+  const begin =
+    '-----BEGIN ' +
+    'PRIVATE KEY-----';
+
+  const end =
+    '-----END ' +
+    'PRIVATE KEY-----';
+
+  const fakePrivateKey =
+    `${begin}\n` +
+    'THISISONLYSYNTHETICTESTMATERIAL\n' +
+    `${end}`;
 
   const result =
     redactSensitiveInput(
@@ -155,6 +195,11 @@ THISISONLYSYNTHETICTESTMATERIAL
 });
 
 test('redacts Luhn-valid payment-card-like values', () => {
+  /*
+   * Publicly documented synthetic test value.
+   * No real payment credential is used.
+   */
+
   const result =
     redactSensitiveInput(
       'Synthetic test card 4111 1111 1111 1111',
@@ -178,7 +223,8 @@ test('redacts Luhn-valid payment-card-like values', () => {
 
 test('outbound inspection blocks an unredacted secret', () => {
   const fakeKey =
-    'sk-ant-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    'sk-ant-' +
+    'b'.repeat(32);
 
   const inspection =
     inspectOutboundContent(
@@ -199,7 +245,8 @@ test('outbound inspection blocks an unredacted secret', () => {
 
 test('redacted secrets pass outbound inspection', () => {
   const fakeKey =
-    'sk-ant-cccccccccccccccccccccccccccccccc';
+    'sk-ant-' +
+    'c'.repeat(32);
 
   const redacted =
     redactSensitiveInput(
@@ -303,11 +350,20 @@ test('forecast is explicitly labeled as a model estimate', () => {
 test('model output never qualifies a payment in public demo', () => {
   const result =
     qualifyAction({
-      role: 'CFO',
-      action: 'SEND_PAYMENT',
-      evidenceQuality: 100,
-      sourceAgreement: 100,
-      unresolvedExceptions: 0,
+      role:
+        'CFO',
+
+      action:
+        'SEND_PAYMENT',
+
+      evidenceQuality:
+        100,
+
+      sourceAgreement:
+        100,
+
+      unresolvedExceptions:
+        0,
     });
 
   assert.equal(
@@ -324,11 +380,20 @@ test('model output never qualifies a payment in public demo', () => {
 test('viewer cannot publish board pack', () => {
   const result =
     qualifyAction({
-      role: 'VIEWER',
-      action: 'PUBLISH_BOARD_PACK',
-      evidenceQuality: 99,
-      sourceAgreement: 99,
-      unresolvedExceptions: 0,
+      role:
+        'VIEWER',
+
+      action:
+        'PUBLISH_BOARD_PACK',
+
+      evidenceQuality:
+        99,
+
+      sourceAgreement:
+        99,
+
+      unresolvedExceptions:
+        0,
     });
 
   assert.equal(
@@ -345,11 +410,20 @@ test('viewer cannot publish board pack', () => {
 test('invalid authorization evidence fails closed', () => {
   const result =
     qualifyAction({
-      role: 'CFO',
-      action: 'EXPORT_JOURNAL',
-      evidenceQuality: 101,
-      sourceAgreement: 99,
-      unresolvedExceptions: 0,
+      role:
+        'CFO',
+
+      action:
+        'EXPORT_JOURNAL',
+
+      evidenceQuality:
+        101,
+
+      sourceAgreement:
+        99,
+
+      unresolvedExceptions:
+        0,
     });
 
   assert.equal(
