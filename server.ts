@@ -1,4 +1,5 @@
 import express from 'express';
+
 import path from 'path';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
@@ -8,6 +9,15 @@ import {
   appendAuditEvent,
   getAuditEvents,
 } from './server/audit';
+
+import {
+  registerIdentitySecurity,
+} from './server/identity';
+
+import type {
+  AuthenticatedIdentity,
+  TenantContext,
+} from './server/auth';
 
 import {
   apiRateLimit,
@@ -72,6 +82,16 @@ app.use(
 app.use(
   '/api',
   requireJson,
+);
+
+/*
+ * -------------------------------------------------------
+ * AUTHENTICATED IDENTITY + TENANT SECURITY
+ * -------------------------------------------------------
+ */
+
+registerIdentitySecurity(
+  app,
 );
 
 /*
@@ -306,9 +326,15 @@ app.get(
     _req,
     res,
   ) => {
+    const tenant =
+      res.locals
+        .tenant as TenantContext;
+
     res.json({
       events:
-        getAuditEvents(),
+        getAuditEvents(
+          tenant.organizationId,
+        ),
 
       requestId:
         res.locals
@@ -330,18 +356,41 @@ app.post(
     req,
     res,
   ) => {
+    const identity =
+      res.locals
+        .identity as AuthenticatedIdentity;
+
+    const tenant =
+      res.locals
+        .tenant as TenantContext;
+
     const body =
       req.body || {};
 
+    /*
+     * The caller is never allowed to choose
+     * or override its authorization role.
+     */
     if (
-      ![
-        'CFO',
-        'CONTROLLER',
-        'ACCOUNTANT',
-        'VIEWER',
-      ].includes(
-        body.role,
-      ) ||
+      Object.prototype
+        .hasOwnProperty.call(
+          body,
+          'role',
+        )
+    ) {
+      return res
+        .status(400)
+        .json({
+          error:
+            'Client-supplied role is not accepted.',
+
+          requestId:
+            res.locals
+              .requestId,
+        });
+    }
+
+    if (
       ![
         'EXPORT_JOURNAL',
         'APPROVE_RECONCILIATION',
@@ -402,7 +451,7 @@ app.post(
     const result =
       qualifyAction({
         role:
-          body.role,
+          tenant.applicationRole,
 
         action:
           body.action,
@@ -417,13 +466,18 @@ app.post(
     appendAuditEvent(
       'ACTION_QUALIFICATION',
 
-      body.role,
+      identity.user.id,
 
       `${body.action}:${result.status}`,
+
+      tenant.organizationId,
     );
 
     return res.json({
       ...result,
+
+      role:
+        tenant.databaseRole,
 
       requestId:
         res.locals
@@ -445,6 +499,14 @@ app.post(
     req,
     res,
   ) => {
+    const identity =
+      res.locals
+        .identity as AuthenticatedIdentity;
+
+    const tenant =
+      res.locals
+        .tenant as TenantContext;
+
     try {
       const messages =
         validateMessages(
@@ -585,9 +647,11 @@ app.post(
       appendAuditEvent(
         'COPILOT_QUERY',
 
-        'demo-user',
+        identity.user.id,
 
         `${trust.status}:${trust.auditId}`,
+
+        tenant.organizationId,
       );
 
       /*
@@ -603,9 +667,11 @@ app.post(
         appendAuditEvent(
           'COPILOT_SECURITY_BLOCK',
 
-          'demo-user',
+          identity.user.id,
 
           'PROMPT_INJECTION_ELEVATED',
+
+          tenant.organizationId,
         );
 
         return res.json({
@@ -640,12 +706,14 @@ app.post(
         appendAuditEvent(
           'COPILOT_DLP_BLOCK',
 
-          'demo-user',
+          identity.user.id,
 
           outboundInspection
             .reasons
             .join(',') ||
             'OUTBOUND_DLP_ELEVATED',
+
+          tenant.organizationId,
         );
 
         return res.json({
@@ -762,12 +830,14 @@ app.post(
             appendAuditEvent(
               'COPILOT_DLP_BLOCK',
 
-              'server',
+              identity.user.id,
 
               finalInspection
                 .reasons
                 .join(',') ||
                 'FINAL_EGRESS_CHECK_FAILED',
+
+              tenant.organizationId,
             );
 
             return res.json({
@@ -850,17 +920,21 @@ app.post(
             appendAuditEvent(
               'COPILOT_PROVIDER_SUCCESS',
 
-              'server',
+              identity.user.id,
 
               'ANTHROPIC',
+
+              tenant.organizationId,
             );
           } else {
             appendAuditEvent(
               'COPILOT_PROVIDER_FALLBACK',
 
-              'server',
+              identity.user.id,
 
               'ANTHROPIC_EMPTY_RESPONSE',
+
+              tenant.organizationId,
             );
           }
         } catch (
@@ -879,9 +953,11 @@ app.post(
           appendAuditEvent(
             'COPILOT_PROVIDER_FALLBACK',
 
-            'server',
+            identity.user.id,
 
             'ANTHROPIC_ERROR',
+
+            tenant.organizationId,
           );
         }
       }
@@ -913,9 +989,11 @@ app.post(
       appendAuditEvent(
         'COPILOT_ERROR',
 
-        'server',
+        identity.user.id,
 
         'CONTROL_LAYER_ERROR',
+
+        tenant.organizationId,
       );
 
       return res
