@@ -36,6 +36,9 @@ jobs:
       - name: Install locked dependencies
         run: npm ci
 
+      - name: Verify public evidence manifest
+        run: npm run verify:manifest
+
       - name: Public-release leakage scan
         run: npm run security:scan-public
 

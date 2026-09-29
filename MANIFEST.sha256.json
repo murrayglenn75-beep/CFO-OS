@@ -1,7 +1,7 @@
 {
   ".env.example": "800ee54b25fd46d557704f6a555fc4799538d24a89de6bc12485a7db90a2e2d8",
   ".github/dependabot.yml": "630d544a32f764ccc4a70bbd8cd7414ed7b77f7f40ea0b6f092a78bc740243f1",
-  ".github/workflows/ci.yml": "4a5787871e1a51478aa78ca6fee5daa9523328363da3817338039c53430b1c57",
+  ".github/workflows/ci.yml": "0f00b3abb00621d7909106970eebf4c16c3ebe09d7acffb43214a8637135f236",
   ".gitignore": "b8070b2f1e88c0bbd139530e7ab6ba0573483a83f6c59703ecf79f934280ffa2",
   "ARCHITECTURE.md": "cd38530d1878d772c80fac3243fc54a27ebd6e742f1bdbdc1e5e77469a840a03",
   "NOTICE.md": "90536c7104943bcc0f385d46cd2950d1c3dade8aa2ddfed6658681e7d80b6533",
