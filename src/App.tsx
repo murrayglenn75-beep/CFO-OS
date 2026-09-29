@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { ViewType, NavItem } from './types';
 import { SYNTHETIC_FINANCIALS, INGESTION_SOURCES_DATA, RECONCILIATION_RECORDS_DATA, DAG_NODES_DATA } from './data';
 import { CommandCenter } from './components/CommandCenter';
-import { Ingestion } from './components/Ingestion';
-import { Reconciliation } from './components/Reconciliation';
-import { CalculationEngine } from './components/CalculationEngine';
-import { AICopilot } from './components/AICopilot';
-import { AuditTrail } from './components/AuditTrail';
-import { RoiImpact } from './components/RoiImpact';
-import { VarianceExplorer } from './components/VarianceExplorer';
-import { TrustSecurity } from './components/TrustSecurity';
+const Ingestion = lazy(() => import('./components/Ingestion').then(m => ({ default: m.Ingestion })));
+const Reconciliation = lazy(() => import('./components/Reconciliation').then(m => ({ default: m.Reconciliation })));
+const CalculationEngine = lazy(() => import('./components/CalculationEngine').then(m => ({ default: m.CalculationEngine })));
+const AICopilot = lazy(() => import('./components/AICopilot').then(m => ({ default: m.AICopilot })));
+const AuditTrail = lazy(() => import('./components/AuditTrail').then(m => ({ default: m.AuditTrail })));
+const RoiImpact = lazy(() => import('./components/RoiImpact').then(m => ({ default: m.RoiImpact })));
+const VarianceExplorer = lazy(() => import('./components/VarianceExplorer').then(m => ({ default: m.VarianceExplorer })));
+const TrustSecurity = lazy(() => import('./components/TrustSecurity').then(m => ({ default: m.TrustSecurity })));
 import { supabase } from './lib/supabase';
 import { clearActiveOrganizationId } from './lib/api';
 import {
@@ -92,7 +92,11 @@ export default function App() {
           <div className="topbar-left"><span className="close-chip">MAY 2026 · FINAL CLOSE</span><span className="snapshot">Snapshot 01 Jun 2026 · 05:14 UTC</span></div>
           <div className="topbar-right"><span className="authority-chip"><ShieldCheck className="w-3.5 h-3.5"/> Human execution authority</span><button className="mobile-signout" type="button" aria-label="Sign out" title="Sign out" onClick={() => { void handleSignOut(); }}><LogOut className="w-4 h-4"/></button><button className="theme-toggle" onClick={() => setTheme((x) => x === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? <Sun className="w-4 h-4"/> : <Moon className="w-4 h-4"/>}</button></div>
         </header>
-        <main className="content-canvas">{renderView()}</main>
+        <main className="content-canvas">
+          <Suspense fallback={<div className="page-shell" role="status">Loading view...</div>}>
+            {renderView()}
+          </Suspense>
+        </main>
       </div>
     </div>
   );

@@ -26,7 +26,7 @@
   "server/security.ts": "68390e6838d7900d8a246ce2bc4aacc633bcf2560c09473a19b14bf500b49121",
   "server/tenant.ts": "8050a655a062701faddf0cda49a0277024f0b5d58a488bcce9068bfb17e3060c",
   "server/trust.ts": "b805d3cd6545d3fb686cdc65542df7675d6d39a354ae48cf9f1ab0c1ca825385",
-  "src/App.tsx": "446836149a19671d4c583ed080e4638712f73e30a3a9f8105a1a47ceaab163fc",
+  "src/App.tsx": "566ec73cee9537e61bbe09902f6cba8f413048e8b3733d17fad78703caf8c02c",
   "src/components/AICopilot.tsx": "19fd2a68502edc59435ca6223f700649d3462c849edd097d554e09d28af6fda6",
   "src/components/AuditTrail.tsx": "9d4172b5a5f20c2350bffc1e6d04fc0fd2f9ab2fba7a6a74a637e93b731dd1c0",
   "src/components/AuthGate.tsx": "f37b054b2edf7a159eb3ed76b78cb727c6349090cfcdfbf016361b67c7133b31",
