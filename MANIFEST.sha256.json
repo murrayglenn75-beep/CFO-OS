@@ -26,12 +26,12 @@
   "server/security.ts": "68390e6838d7900d8a246ce2bc4aacc633bcf2560c09473a19b14bf500b49121",
   "server/tenant.ts": "8050a655a062701faddf0cda49a0277024f0b5d58a488bcce9068bfb17e3060c",
   "server/trust.ts": "b805d3cd6545d3fb686cdc65542df7675d6d39a354ae48cf9f1ab0c1ca825385",
-  "src/App.tsx": "446836149a19671d4c583ed080e4638712f73e30a3a9f8105a1a47ceaab163fc",
+  "src/App.tsx": "566ec73cee9537e61bbe09902f6cba8f413048e8b3733d17fad78703caf8c02c",
   "src/components/AICopilot.tsx": "19fd2a68502edc59435ca6223f700649d3462c849edd097d554e09d28af6fda6",
   "src/components/AuditTrail.tsx": "9d4172b5a5f20c2350bffc1e6d04fc0fd2f9ab2fba7a6a74a637e93b731dd1c0",
   "src/components/AuthGate.tsx": "f37b054b2edf7a159eb3ed76b78cb727c6349090cfcdfbf016361b67c7133b31",
   "src/components/CalculationEngine.tsx": "1cfc99e6be4edea9d9da88f301ce4a59b9cd17bd947ce57d70f700c092bbadc2",
-  "src/components/CommandCenter.tsx": "9d63390be02cf85a2e5d7109d0927e4ad1d5b59159301cb39d7152bbafef77fd",
+  "src/components/CommandCenter.tsx": "249bf0d7c4f3f9d041ebf5fa36c34036cc31f25daa100a4f6e7fe1ebb65528a2",
   "src/components/Ingestion.tsx": "4f8d12878f1eb44279cb3367b4580bed365f67791188d0a024c95a8368423a72",
   "src/components/Reconciliation.tsx": "777479ce1699d1fb1ff9826e4672149ee30d2e7fdfacf53c6dbf45d779fb4cbe",
   "src/components/RoiImpact.tsx": "3d81851f8ed4f1aa62402344dba1e097c0477d174eb1f7f0fa1c7dd1f521bfd2",
@@ -51,5 +51,6 @@
   "test/auth-tenant.test.ts": "0a7f673eace3f3f72450026202eccfb1b9c45133fe598ec4ac091cdd9ce6eec9",
   "test/trust.test.ts": "f26866b82e49ba633fd7f6de82860fcebc7b5c4f1f48035b82628af4519fce1f",
   "tsconfig.json": "e93e15c3794e43a117964ea191ae985cbedea70c41d3d82b2e20aa8d07374fe4",
-  "vite.config.ts": "afe0e937c64657224b57ce9aa2790fe67ba1012b9ed55cb26fa7ece0fa581a3c"
+  "vite.config.ts": "afe0e937c64657224b57ce9aa2790fe67ba1012b9ed55cb26fa7ece0fa581a3c",
+  "src/components/RevenueCashChart.tsx": "ebb5ce913deec643db5d26257f78d2076dfd9d2e0d53d13073e9817dd18a9488"
 }

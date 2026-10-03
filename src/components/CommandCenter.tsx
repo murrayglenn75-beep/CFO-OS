@@ -1,11 +1,12 @@
-import React from 'react';
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import React, { lazy, Suspense } from 'react';
 import { FinancialRecord, ViewType } from '../types';
 import { ArrowRight, BadgeCheck, CircleAlert, CircleCheck, ShieldCheck, TrendingDown, WalletCards } from 'lucide-react';
 import { TrustBadge } from './trust/TrustBadge';
 
 interface Props { data: FinancialRecord[]; onNavigate: (view: ViewType) => void; }
 const money = (n: number) => `${n < 0 ? '-' : ''}$${Math.abs(n) >= 1_000_000 ? `${(Math.abs(n)/1_000_000).toFixed(2)}M` : `${(Math.abs(n)/1000).toFixed(0)}K`}`;
+
+const RevenueCashChart = lazy(() => import('./RevenueCashChart'));
 
 export const CommandCenter: React.FC<Props> = ({ data, onNavigate }) => {
   const current = data[data.length - 1];
@@ -42,25 +43,11 @@ export const CommandCenter: React.FC<Props> = ({ data, onNavigate }) => {
       <section className="dashboard-grid">
         <article className="panel-card performance-panel">
           <div className="panel-title-row"><div><span className="eyebrow">12-MONTH VIEW</span><h2>Revenue and cash trajectory</h2></div><span className="micro-note">Synthetic demo data</span></div>
-          <div className="chart-wrap">
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
-              minWidth={0}
-              minHeight={0}
-              initialDimension={{ width: 800, height: 285 }}
-            >
-              <AreaChart data={data} margin={{ left: 0, right: 10, top: 12, bottom: 0 }}>
-                <defs><linearGradient id="rev" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="var(--c-brass)" stopOpacity={0.28}/><stop offset="95%" stopColor="var(--c-brass)" stopOpacity={0}/></linearGradient></defs>
-                <CartesianGrid vertical={false} stroke="var(--c-ink-700)" strokeDasharray="3 3" />
-                <XAxis dataKey="month" tick={{ fill: 'var(--c-slate)', fontSize: 10 }} axisLine={false} tickLine={false} minTickGap={24}/>
-                <YAxis tick={{ fill: 'var(--c-slate)', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${(v/1_000_000).toFixed(1)}m`}/>
-                <Tooltip contentStyle={{ background: 'var(--c-ink-850)', border: '1px solid var(--c-ink-700)', borderRadius: 12 }} formatter={(v: any) => money(Number(v))} />
-                <Area type="monotone" dataKey="revenue" stroke="var(--c-brass)" strokeWidth={2.5} fill="url(#rev)" />
-                <Area type="monotone" dataKey="cash" stroke="var(--c-emerald)" strokeWidth={2} fillOpacity={0} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <Suspense fallback={
+            <div className="chart-wrap" role="status" aria-label="Loading revenue and cash chart" />
+          }>
+            <RevenueCashChart data={data} />
+          </Suspense>
         </article>
 
         <article className="panel-card decision-panel">
