@@ -1,5 +1,14 @@
 # CFO OS — Governed Finance Intelligence
 
+## 30-second overview
+
+**CFO OS is a portfolio finance platform that combines deterministic financial logic with a tightly constrained AI copilot.** Financial calculations and control decisions are established by normal software first; AI is used to explain and analyze the resulting evidence.
+
+**What I built:** ingestion and reconciliation flows, deterministic finance calculations, evidence/trust state, governed AI analysis, action qualification, audit trails, executive views, and security boundaries around privileged actions.
+
+**Why it matters:** finance systems should not make a language model the source of financial truth. CFO OS demonstrates how AI can add analytical value without being given unchecked authority over records or financial actions.
+
+
 > **Public portfolio build.** All company, transaction, close-cycle, financial, identity, and operational data in this repository is synthetic. No customer or employer data is included.
 
 CFO OS is a full-stack governed AI finance operating system that combines deterministic financial calculations, evidence-aware reasoning, security controls, auditable decision state, and deliberately constrained AI analysis.
